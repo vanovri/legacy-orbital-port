@@ -1,0 +1,3 @@
+* text=auto eol=lf
+*.png binary
+tests/fixtures/*.f -text whitespace=-blank-at-eol,cr-at-eol

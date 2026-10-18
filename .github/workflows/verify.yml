@@ -1,0 +1,33 @@
+name: Numerical migration gates
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        profile: [optimized, checked]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install GNU Fortran and C++
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends gfortran g++
+      - name: Output gate negative controls
+        run: python -m unittest discover -s tests -v
+      - name: Compile and verify real executables
+        run: python verify_parity.py --profile ${{ matrix.profile }} --report reports/ci-${{ matrix.os }}-${{ matrix.profile }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-${{ matrix.os }}-${{ matrix.profile }}
+          path: reports/ci-*.json
+          if-no-files-found: error
